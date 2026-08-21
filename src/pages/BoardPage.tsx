@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CARD_STATUSES, CARD_STATUS_LABELS, countCardsByStatus, type Board, type Card, type CardStatus } from '../domain/Board'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
+import { CardDetailDrawer } from './CardDetailDrawer'
 import styles from './Pages.module.css'
 
 const boardRepository = new LocalStorageBoardRepository()
@@ -15,6 +16,14 @@ function cardsForStatus(board: Board, status: CardStatus): Card[] {
   return board.cards.filter((card) => card.status === status).sort((left, right) => left.order - right.order)
 }
 
+function normalizeOrders(cards: Card[]): Card[] {
+  return [...cards].sort((left, right) => left.order - right.order).map((card, order) => ({ ...card, order }))
+}
+
+function assignOrders(cards: Card[]): Card[] {
+  return cards.map((card, order) => ({ ...card, order }))
+}
+
 export function BoardPage() {
   const { boardId } = useParams()
   const navigate = useNavigate()
@@ -24,12 +33,19 @@ export function BoardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameTitle, setRenameTitle] = useState('')
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
 
   if (!board) {
     return <main className={styles.page}><h1>ボードが見つかりません</h1><Link to="/">ボード一覧へ戻る</Link></main>
   }
 
   const counts = countCardsByStatus(board)
+  const selectedCard = board.cards.find((card) => card.id === selectedCardId)
+
+  const saveBoard = (updatedBoard: Board) => {
+    boardRepository.save(updatedBoard)
+    setBoard(updatedBoard)
+  }
 
   const addCard = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -42,8 +58,7 @@ export function BoardPage() {
       updatedAt: new Date().toISOString(),
       cards: [...board.cards, { id: crypto.randomUUID(), title, memo: '', decision: '', status: 'UNSORTED', order }],
     }
-    boardRepository.save(updatedBoard)
-    setBoard(updatedBoard)
+    saveBoard(updatedBoard)
     setCardTitle('')
     setIsAdding(false)
   }
@@ -53,8 +68,7 @@ export function BoardPage() {
     const title = renameTitle.trim()
     if (!title) return
     const updatedBoard = { ...board, title, updatedAt: new Date().toISOString() }
-    boardRepository.save(updatedBoard)
-    setBoard(updatedBoard)
+    saveBoard(updatedBoard)
     setIsRenaming(false)
   }
 
@@ -62,6 +76,36 @@ export function BoardPage() {
     if (!window.confirm(`「${board.title}」を削除しますか？\n保存されている論点カードもすべて削除されます。`)) return
     boardRepository.delete(board.id)
     navigate('/')
+  }
+
+  const updateCard = (field: 'title' | 'memo' | 'decision', value: string) => {
+    if (!selectedCard) return
+    saveBoard({
+      ...board,
+      updatedAt: new Date().toISOString(),
+      cards: board.cards.map((card) => card.id === selectedCard.id ? { ...card, [field]: value } : card),
+    })
+  }
+
+  const changeCardStatus = (status: CardStatus) => {
+    if (!selectedCard || selectedCard.status === status) return
+    const sourceCards = cardsForStatus(board, selectedCard.status).filter((card) => card.id !== selectedCard.id)
+    const targetCards = cardsForStatus(board, status)
+    const normalizedCards = [...normalizeOrders(sourceCards), ...assignOrders([...normalizeOrders(targetCards), { ...selectedCard, status }])]
+    const replacements = new Map(normalizedCards.map((card) => [card.id, card]))
+    saveBoard({ ...board, updatedAt: new Date().toISOString(), cards: board.cards.map((card) => replacements.get(card.id) ?? card) })
+  }
+
+  const deleteCard = () => {
+    if (!selectedCard || !window.confirm(`「${selectedCard.title}」を削除しますか？`)) return
+    const remainingInColumn = normalizeOrders(cardsForStatus(board, selectedCard.status).filter((card) => card.id !== selectedCard.id))
+    const replacements = new Map(remainingInColumn.map((card) => [card.id, card]))
+    saveBoard({
+      ...board,
+      updatedAt: new Date().toISOString(),
+      cards: board.cards.filter((card) => card.id !== selectedCard.id).map((card) => replacements.get(card.id) ?? card),
+    })
+    setSelectedCardId(null)
   }
 
   return (
@@ -104,12 +148,13 @@ export function BoardPage() {
         {CARD_STATUSES.map((status) => (
           <section className={styles.boardColumn} aria-label={`${CARD_STATUS_LABELS[status]}の列`} key={status}>
             <h2>{CARD_STATUS_LABELS[status]}</h2>
-            {cardsForStatus(board, status).map((card) => <article className={styles.card} key={card.id}>
-              <h3>{card.title}</h3><p className={styles.cardPreview}>{previewFor(card)}</p>
-            </article>)}
+            {cardsForStatus(board, status).map((card) => <button type="button" className={styles.card} key={card.id} onClick={() => setSelectedCardId(card.id)}>
+              <span className={styles.cardTitle}>{card.title}</span><span className={styles.cardPreview}>{previewFor(card)}</span>
+            </button>)}
           </section>
         ))}
       </div>
+      {selectedCard && <CardDetailDrawer card={selectedCard} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
     </main>
   )
 }

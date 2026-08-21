@@ -32,6 +32,12 @@
 .boardColumns { display: grid; grid-template-columns: repeat(4, minmax(220px, 1fr)); gap: 1rem; overflow-x: auto; }
 .boardColumn { min-height: 18rem; padding: 0.75rem; background: #f8fafc; border: 1px solid #d0d5dd; border-radius: 0.5rem; }
 .boardColumn h2 { margin: 0 0 0.75rem; font-size: 1rem; }
-.card { padding: 0.75rem; margin-bottom: 0.65rem; background: #fff; border: 1px solid #d0d5dd; border-radius: 0.4rem; }
-.card h3 { margin: 0 0 0.35rem; font-size: 0.95rem; }
-.cardPreview { margin: 0; overflow: hidden; color: #667085; white-space: nowrap; text-overflow: ellipsis; }
+.card { display: block; width: 100%; padding: 0.75rem; margin-bottom: 0.65rem; text-align: left; cursor: pointer; background: #fff; border: 1px solid #d0d5dd; border-radius: 0.4rem; }
+.cardTitle { display: block; margin-bottom: 0.35rem; font-size: 0.95rem; font-weight: 700; }
+.cardPreview { display: block; overflow: hidden; color: #667085; white-space: nowrap; text-overflow: ellipsis; }
+.drawer { position: fixed; z-index: 2; top: 0; right: 0; display: grid; gap: 0.55rem; width: min(26rem, 100vw); height: 100vh; padding: 1.25rem; background: #fff; border-left: 1px solid #d0d5dd; box-shadow: -4px 0 16px rgb(16 24 40 / 16%); }
+.drawerHeader { display: flex; align-items: center; justify-content: space-between; }
+.drawerHeader h2 { margin: 0; }
+.drawer input, .drawer textarea, .drawer select { padding: 0.55rem; font: inherit; border: 1px solid #98a2b3; border-radius: 0.35rem; }
+.drawer textarea { min-height: 7rem; resize: vertical; }
+.deleteButton { align-self: end; padding: 0.6rem; color: #b42318; background: #fff; border: 1px solid #b42318; border-radius: 0.35rem; }
