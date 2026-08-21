@@ -66,7 +66,7 @@ type BoardColumnProps = {
 function BoardColumn({ cards, status, onSelect }: BoardColumnProps) {
   const { isOver, setNodeRef } = useDroppable({ id: columnDndId(status), data: { type: 'column', status } })
   return (
-    <section ref={setNodeRef} className={`${styles.boardColumn} ${isOver ? styles.columnOver : ''}`} aria-label={`${CARD_STATUS_LABELS[status]}の列`}>
+    <section ref={setNodeRef} className={`${styles.boardColumn} ${isOver ? styles.columnOver : ''}`} data-status={status} aria-label={`${CARD_STATUS_LABELS[status]}の列`}>
       <h2>{CARD_STATUS_LABELS[status]}</h2>
       <SortableContext items={cards.map((card) => cardDndId(card.id))} strategy={verticalListSortingStrategy}>
         {cards.map((card) => <SortableCard key={card.id} card={card} onSelect={onSelect} />)}
