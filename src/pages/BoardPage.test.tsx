@@ -47,7 +47,11 @@ describe('BoardPage', () => {
     expect(decided.getByText('決定内容')).toBeInTheDocument()
     expect(decided.queryByText('使わないメモ')).not.toBeInTheDocument()
     expect(decided.getByText('決定のメモ')).toBeInTheDocument()
-    expect(within(screen.getByLabelText('状態別件数')).getAllByText('2件')).toHaveLength(2)
+    const summary = within(screen.getByLabelText('状態別件数'))
+    expect(summary.getByText('未整理').parentElement).toHaveTextContent('未整理2件')
+    expect(summary.getByText('検討中').parentElement).toHaveTextContent('検討中1件')
+    expect(summary.getByText('保留').parentElement).toHaveTextContent('保留1件')
+    expect(summary.getByText('決定').parentElement).toHaveTextContent('決定2件')
   })
 
   it('論点を未整理列の末尾に追加して Repository へ保存する', () => {

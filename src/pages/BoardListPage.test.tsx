@@ -98,7 +98,8 @@ describe('BoardListPage', () => {
     renderList()
     fireEvent.click(screen.getByRole('button', { name: '週次ミーティング の管理メニュー' }))
     expect(screen.getByRole('button', { name: '名前変更' })).toBeInTheDocument()
-    expect(screen.queryByText('ボードが見つかりません')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'ボード一覧' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '週次ミーティング を開く' })).toBeInTheDocument()
   })
 
   it('削除をキャンセルすると Board を残し、確認すると削除する', () => {
