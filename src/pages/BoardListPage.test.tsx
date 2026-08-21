@@ -62,7 +62,7 @@ describe('BoardListPage', () => {
     expect(saved).toHaveLength(1)
     expect(saved[0]).toMatchObject({ title: '新しい話し合い', cards: [] })
     expect(saved[0]?.createdAt).toBe('2026-08-21T09:00:00.000Z')
-    expect(screen.getByText(`ボード: ${saved[0]?.id}`)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '新しい話し合い' })).toBeInTheDocument()
   })
 
   it('空白だけの名前では Board を作成しない', () => {
@@ -77,7 +77,7 @@ describe('BoardListPage', () => {
     repository.save(board())
     renderList()
     fireEvent.click(screen.getByRole('link', { name: '週次ミーティング を開く' }))
-    expect(screen.getByText('ボード: board-1')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '週次ミーティング' })).toBeInTheDocument()
   })
 
   it('名前変更は updatedAt を更新し、他の Board データを維持する', () => {
@@ -98,7 +98,7 @@ describe('BoardListPage', () => {
     renderList()
     fireEvent.click(screen.getByRole('button', { name: '週次ミーティング の管理メニュー' }))
     expect(screen.getByRole('button', { name: '名前変更' })).toBeInTheDocument()
-    expect(screen.queryByText('ボード: board-1')).not.toBeInTheDocument()
+    expect(screen.queryByText('ボードが見つかりません')).not.toBeInTheDocument()
   })
 
   it('削除をキャンセルすると Board を残し、確認すると削除する', () => {

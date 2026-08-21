@@ -26,6 +26,12 @@ export type Board = {
   cards: Card[]
 }
 
+export function countCardsByStatus(board: Board): Record<CardStatus, number> {
+  const counts: Record<CardStatus, number> = { UNSORTED: 0, DISCUSSING: 0, ON_HOLD: 0, DECIDED: 0 }
+  for (const card of board.cards) counts[card.status] += 1
+  return counts
+}
+
 export type WaypointData = {
   version: 1
   boards: Board[]

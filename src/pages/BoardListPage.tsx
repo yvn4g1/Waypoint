@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CARD_STATUSES, CARD_STATUS_LABELS, type Board, type CardStatus } from '../domain/Board'
+import { CARD_STATUSES, CARD_STATUS_LABELS, countCardsByStatus, type Board } from '../domain/Board'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
 import styles from './Pages.module.css'
 
@@ -11,12 +11,6 @@ function formatUpdatedAt(updatedAt: string): string {
   if (Number.isNaN(date.getTime())) return updatedAt
 
   return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
-}
-
-function countCardsByStatus(board: Board): Record<CardStatus, number> {
-  const counts: Record<CardStatus, number> = { UNSORTED: 0, DISCUSSING: 0, ON_HOLD: 0, DECIDED: 0 }
-  for (const card of board.cards) counts[card.status] += 1
-  return counts
 }
 
 export function BoardListPage() {
