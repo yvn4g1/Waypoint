@@ -40,9 +40,10 @@ type SortableCardProps = {
   card: Card
   isCurrent: boolean
   onSelect: (cardId: string) => void
+  suppressTransform: boolean
 }
 
-function SortableCard({ card, isCurrent, onSelect }: SortableCardProps) {
+function SortableCard({ card, isCurrent, onSelect, suppressTransform }: SortableCardProps) {
   const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({
     id: columnCardDndId(card.id),
     data: { type: 'card', cardId: card.id, status: card.status, source: 'column' satisfies BoardDragSource },
@@ -53,7 +54,10 @@ function SortableCard({ card, isCurrent, onSelect }: SortableCardProps) {
       ref={setNodeRef}
       type="button"
       className={`${styles.card} ${isDragging ? styles.dragging : ''}`}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={{
+        transform: suppressTransform || isDragging ? undefined : CSS.Transform.toString(transform),
+        transition: suppressTransform ? undefined : transition,
+      }}
       onClick={() => onSelect(card.id)}
       {...attributes}
       {...listeners}
@@ -67,17 +71,18 @@ function SortableCard({ card, isCurrent, onSelect }: SortableCardProps) {
 type BoardColumnProps = {
   cards: Card[]
   currentCardId?: string | null
+  suppressTransform: boolean
   status: CardStatus
   onSelect: (cardId: string) => void
 }
 
-function BoardColumn({ cards, currentCardId, status, onSelect }: BoardColumnProps) {
+function BoardColumn({ cards, currentCardId, suppressTransform, status, onSelect }: BoardColumnProps) {
   const { isOver, setNodeRef } = useDroppable({ id: columnDndId(status), data: { type: 'column', status } })
   return (
     <section ref={setNodeRef} className={`${styles.boardColumn} ${isOver ? styles.columnOver : ''}`} data-status={status} aria-label={`${CARD_STATUS_LABELS[status]}の列`}>
       <h2>{CARD_STATUS_LABELS[status]}</h2>
       <SortableContext items={cards.map((card) => columnCardDndId(card.id))} strategy={verticalListSortingStrategy}>
-        {cards.map((card) => <SortableCard key={card.id} card={card} isCurrent={card.id === currentCardId} onSelect={onSelect} />)}
+        {cards.map((card) => <SortableCard key={card.id} card={card} isCurrent={card.id === currentCardId} onSelect={onSelect} suppressTransform={suppressTransform} />)}
       </SortableContext>
     </section>
   )
@@ -91,7 +96,7 @@ type CurrentTopicProps = {
 
 function CurrentTopic({ card, onClear, onSelect }: CurrentTopicProps) {
   const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: currentSlotDndId, data: { type: 'current-slot' } })
-  const { attributes, isDragging, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
+  const { attributes, isDragging, listeners, setNodeRef: setDraggableRef } = useDraggable({
     id: currentCardDndId(card?.id ?? 'none'),
     data: card ? { type: 'current-card', cardId: card.id, source: 'current' satisfies BoardDragSource } : undefined,
     disabled: !card,
@@ -105,7 +110,6 @@ function CurrentTopic({ card, onClear, onSelect }: CurrentTopicProps) {
           ref={setDraggableRef}
           type="button"
           className={`${styles.currentTopicTitle} ${isDragging ? styles.dragging : ''}`}
-          style={{ transform: CSS.Transform.toString(transform) }}
           onClick={() => onSelect(card.id)}
           {...attributes}
           {...listeners}
@@ -131,18 +135,22 @@ type BoardDndProps = {
 
 export function BoardDnd({ cards, currentCardId, onClearCurrent, onMove, onSelect, onSetCurrent, onDragStart, renderHeader }: BoardDndProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null)
+  const [activeSource, setActiveSource] = useState<BoardDragSource | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
   const activeCard = cards.find((card) => card.id === activeCardId)
   const currentCard = cards.find((card) => card.id === currentCardId)
 
   const handleDragStart = (event: DragStartEvent) => {
     const cardId = event.active.data.current?.cardId as string | undefined
+    const source = event.active.data.current?.source as BoardDragSource | undefined
     setActiveCardId(cardId ?? null)
+    setActiveSource(source ?? null)
     if (cardId) onDragStart?.(cardId)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveCardId(null)
+    setActiveSource(null)
     const cardId = event.active.data.current?.cardId as string | undefined
     const source = event.active.data.current?.source as BoardDragSource | undefined
     if (!cardId || !event.over) return
@@ -181,12 +189,12 @@ export function BoardDnd({ cards, currentCardId, onClearCurrent, onMove, onSelec
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={preferCardCollision} onDragStart={handleDragStart} onDragCancel={() => setActiveCardId(null)} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={preferCardCollision} onDragStart={handleDragStart} onDragCancel={() => { setActiveCardId(null); setActiveSource(null) }} onDragEnd={handleDragEnd}>
       {renderHeader(<CurrentTopic card={currentCard} onClear={onClearCurrent} onSelect={onSelect} />)}
       <div className={styles.boardColumns}>
-        {CARD_STATUSES.map((status) => <BoardColumn key={status} status={status} cards={cardsForStatus(cards, status)} currentCardId={currentCard?.id} onSelect={onSelect} />)}
+        {CARD_STATUSES.map((status) => <BoardColumn key={status} status={status} cards={cardsForStatus(cards, status)} currentCardId={currentCard?.id} suppressTransform={activeSource === 'current'} onSelect={onSelect} />)}
       </div>
-      <DragOverlay>{activeCard && <div className={`${styles.card} ${styles.dragOverlay}`}><span className={styles.cardTitle}>{activeCard.title}</span></div>}</DragOverlay>
+      <DragOverlay adjustScale={false}>{activeCard && <div className={`${styles.card} ${styles.dragOverlay}`}><span className={styles.cardTitle}>{activeCard.title}</span></div>}</DragOverlay>
     </DndContext>
   )
 }
