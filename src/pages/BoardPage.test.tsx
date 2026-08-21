@@ -111,6 +111,26 @@ describe('BoardPage', () => {
     expect(repository.findById('board-1')).toMatchObject({ title: '変更後の会議', updatedAt: '2026-08-21T09:00:00.000Z' })
   })
 
+  it('管理メニューからJSONをエクスポートする', () => {
+    repository.save(board())
+    const createObjectURL = vi.fn(() => 'blob:waypoint')
+    const revokeObjectURL = vi.fn()
+    Object.defineProperties(URL, {
+      createObjectURL: { value: createObjectURL, configurable: true },
+      revokeObjectURL: { value: revokeObjectURL, configurable: true },
+    })
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    renderBoard()
+
+    fireEvent.click(screen.getByRole('button', { name: 'ボード管理メニュー' }))
+    fireEvent.click(screen.getByRole('button', { name: 'JSONエクスポート' }))
+
+    expect(createObjectURL).toHaveBeenCalledOnce()
+    expect(click).toHaveBeenCalledOnce()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:waypoint')
+    expect(screen.getByRole('heading', { name: 'プロジェクト会議' })).toBeInTheDocument()
+  })
+
   it('削除をキャンセルすると残し、確認すると一覧へ遷移して削除する', () => {
     repository.save(board())
     vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)

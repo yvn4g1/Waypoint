@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CARD_STATUSES, CARD_STATUS_LABELS, countCardsByStatus, type Board } from '../domain/Board'
+import { createImportedBoard, parseBoardExport } from '../domain/BoardExport'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
+import { downloadBoardExport } from './boardExportDownload'
 import styles from './Pages.module.css'
 
 const boardRepository = new LocalStorageBoardRepository()
@@ -21,6 +23,8 @@ export function BoardListPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameTitle, setRenameTitle] = useState('')
   const [menuBoardId, setMenuBoardId] = useState<string | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const importInputRef = useRef<HTMLInputElement>(null)
 
   const refreshBoards = () => setBoards(boardRepository.findAll())
 
@@ -57,6 +61,34 @@ export function BoardListPage() {
     setMenuBoardId(null)
   }
 
+  const importErrorMessage = (error: 'invalid-json' | 'unsupported-version' | 'invalid-format') => {
+    if (error === 'invalid-json') return 'JSONとして読み込めません。'
+    if (error === 'unsupported-version') return '未対応のバージョンです。'
+    return 'Waypointのボード形式として不正です。'
+  }
+
+  const importBoard = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    if (!file) return
+
+    try {
+      const parsed = parseBoardExport(await file.text())
+      if (!parsed.ok) {
+        setImportError(importErrorMessage(parsed.error))
+        return
+      }
+      const importedBoard = createImportedBoard(parsed.value, new Date().toISOString(), () => crypto.randomUUID())
+      boardRepository.save(importedBoard)
+      refreshBoards()
+      setImportError(null)
+    } catch {
+      setImportError('ファイルを読み込めません。')
+    } finally {
+      input.value = ''
+    }
+  }
+
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -64,8 +96,14 @@ export function BoardListPage() {
           <h1>ボード一覧</h1>
           <p>話し合いの現在地を確認・再開できます。</p>
         </div>
-        <button type="button" className={styles.primaryButton} onClick={() => setIsCreating(true)}>＋新しいボード</button>
+        <div className={styles.headerButtons}>
+          <button type="button" onClick={() => importInputRef.current?.click()}>インポート</button>
+          <button type="button" className={styles.primaryButton} onClick={() => setIsCreating(true)}>＋新しいボード</button>
+          <input ref={importInputRef} className={styles.hiddenInput} type="file" accept=".json,application/json" aria-label="JSONファイルをインポート" onChange={importBoard} />
+        </div>
       </header>
+
+      {importError && <p className={styles.errorMessage} role="alert">{importError}</p>}
 
       {isCreating && (
         <form className={styles.form} onSubmit={createBoard}>
@@ -103,6 +141,7 @@ export function BoardListPage() {
                   {isMenuOpen && (
                     <div className={styles.menu}>
                       <button type="button" onClick={() => startRenaming(board)}>名前変更</button>
+                      <button type="button" onClick={() => { downloadBoardExport(board); setMenuBoardId(null) }}>JSONエクスポート</button>
                       <button type="button" onClick={() => deleteBoard(board)}>削除</button>
                     </div>
                   )}

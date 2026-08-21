@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App'
@@ -124,5 +124,65 @@ describe('BoardListPage', () => {
     first.unmount()
     renderList()
     expect(screen.getByText('保存済みの名前')).toBeInTheDocument()
+  })
+
+  it('管理メニューからJSONをエクスポートしてもボード画面へ遷移しない', () => {
+    repository.save(board())
+    const createObjectURL = vi.fn(() => 'blob:waypoint')
+    const revokeObjectURL = vi.fn()
+    Object.defineProperties(URL, {
+      createObjectURL: { value: createObjectURL, configurable: true },
+      revokeObjectURL: { value: revokeObjectURL, configurable: true },
+    })
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    renderList()
+
+    fireEvent.click(screen.getByRole('button', { name: '週次ミーティング の管理メニュー' }))
+    fireEvent.click(screen.getByRole('button', { name: 'JSONエクスポート' }))
+
+    expect(createObjectURL).toHaveBeenCalledOnce()
+    expect(click).toHaveBeenCalledOnce()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:waypoint')
+    expect(screen.getByRole('heading', { name: 'ボード一覧' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '週次ミーティング を開く' })).toBeInTheDocument()
+  })
+
+  it('JSONをインポートして既存Boardを維持したまま一覧を更新する', async () => {
+    repository.save(board())
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce('00000000-0000-4000-8000-000000000001').mockReturnValueOnce('00000000-0000-4000-8000-000000000002')
+    renderList()
+    const file = new File(['{}'], 'board.json', { type: 'application/json' })
+    Object.defineProperty(file, 'text', {
+      value: vi.fn().mockResolvedValue(JSON.stringify({
+        version: 1,
+        board: board({ id: 'source-board', title: 'インポートした会議', cards: [{ id: 'source-card', title: '論点', memo: 'メモ', decision: '', status: 'ON_HOLD', order: 2 }] }),
+      })),
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'インポート' }))
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('JSONファイルをインポート'), { target: { files: [file] } })
+    })
+
+    expect(repository.findAll()).toHaveLength(2)
+    expect(repository.findById('board-1')).toEqual(board())
+    expect(repository.findById('00000000-0000-4000-8000-000000000001')).toEqual(board({
+      id: '00000000-0000-4000-8000-000000000001', title: 'インポートした会議', updatedAt: '2026-08-21T09:00:00.000Z', cards: [{ id: '00000000-0000-4000-8000-000000000002', title: '論点', memo: 'メモ', decision: '', status: 'ON_HOLD', order: 2 }],
+    }))
+    expect(screen.getByRole('heading', { name: 'インポートした会議' })).toBeInTheDocument()
+  })
+
+  it('不正なJSONは保存せずエラーを表示する', async () => {
+    repository.save(board())
+    renderList()
+    const file = new File(['{}'], 'broken.json', { type: 'application/json' })
+    Object.defineProperty(file, 'text', { value: vi.fn().mockResolvedValue('{') })
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('JSONファイルをインポート'), { target: { files: [file] } })
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('JSONとして読み込めません。')
+    expect(repository.findAll()).toEqual([board()])
   })
 })

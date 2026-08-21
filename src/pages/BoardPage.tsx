@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CARD_STATUSES, CARD_STATUS_LABELS, countCardsByStatus, type Board, type Card, type CardStatus } from '../domain/Board'
 import { cardsForStatus, moveCard } from '../domain/CardOrdering'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
+import { downloadBoardExport } from './boardExportDownload'
 import { BoardDnd } from './BoardDnd'
 import { CardDetailDrawer } from './CardDetailDrawer'
 import styles from './Pages.module.css'
@@ -113,6 +114,7 @@ export function BoardPage() {
           <button type="button" aria-label="ボード管理メニュー" aria-expanded={isMenuOpen} onClick={() => setIsMenuOpen(!isMenuOpen)}>管理</button>
           {isMenuOpen && <div className={styles.menu}>
             <button type="button" onClick={() => { setRenameTitle(board.title); setIsRenaming(true); setIsMenuOpen(false) }}>名前変更</button>
+            <button type="button" onClick={() => { downloadBoardExport(board); setIsMenuOpen(false) }}>JSONエクスポート</button>
             <button type="button" onClick={deleteBoard}>削除</button>
           </div>}
         </div>

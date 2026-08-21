@@ -1,4 +1,5 @@
-import { CARD_STATUSES, type Board, type WaypointData } from '../domain/Board'
+import type { Board, WaypointData } from '../domain/Board'
+import { isBoard, isRecord } from '../domain/BoardValidation'
 import type { BoardRepository } from './BoardRepository'
 
 export const WAYPOINT_STORAGE_KEY = 'waypoint:mvp-data'
@@ -22,31 +23,6 @@ function readWaypointData(storage: Storage): WaypointData {
 function isWaypointData(value: unknown): value is WaypointData {
   if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.boards)) return false
   return value.boards.every(isBoard)
-}
-
-function isBoard(value: unknown): value is Board {
-  return isRecord(value)
-    && typeof value.id === 'string'
-    && typeof value.title === 'string'
-    && typeof value.createdAt === 'string'
-    && typeof value.updatedAt === 'string'
-    && Array.isArray(value.cards)
-    && value.cards.every(isCard)
-}
-
-function isCard(value: unknown): boolean {
-  return isRecord(value)
-    && typeof value.id === 'string'
-    && typeof value.title === 'string'
-    && typeof value.memo === 'string'
-    && typeof value.decision === 'string'
-    && typeof value.status === 'string'
-    && CARD_STATUSES.includes(value.status as (typeof CARD_STATUSES)[number])
-    && typeof value.order === 'number'
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 export class LocalStorageBoardRepository implements BoardRepository {

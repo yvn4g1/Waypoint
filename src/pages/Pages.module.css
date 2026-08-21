@@ -1,11 +1,14 @@
 .page { max-width: 960px; margin: 0 auto; padding: 2rem; color: #1d2939; font-family: system-ui, sans-serif; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.headerButtons { display: flex; gap: 0.5rem; }
 .header h1, .boardCard h2 { margin: 0; }
 .header p, .updatedAt { color: #667085; }
 .primaryButton { padding: 0.6rem 0.9rem; color: #fff; background: #155eef; border: 1px solid #155eef; border-radius: 0.4rem; }
 .form { display: grid; gap: 0.65rem; padding: 1rem; margin-bottom: 1rem; background: #f8fafc; border: 1px solid #d0d5dd; border-radius: 0.5rem; }
 .form input { padding: 0.55rem; border: 1px solid #98a2b3; border-radius: 0.35rem; }
 .formActions { display: flex; gap: 0.5rem; }
+.hiddenInput { display: none; }
+.errorMessage { padding: 0.75rem 1rem; color: #b42318; background: #fef3f2; border: 1px solid #fecdca; border-radius: 0.5rem; }
 .emptyState { padding: 2rem; text-align: center; color: #475467; background: #f8fafc; border: 1px dashed #98a2b3; border-radius: 0.5rem; }
 .boardGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
 .boardCard { position: relative; overflow: visible; background: #fff; border: 1px solid #d0d5dd; border-radius: 0.5rem; box-shadow: 0 1px 2px rgb(16 24 40 / 5%); }
