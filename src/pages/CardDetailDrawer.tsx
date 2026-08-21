@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { Card, CardStatus } from '../domain/Board'
 import { CARD_STATUSES, CARD_STATUS_LABELS } from '../domain/Board'
 import { AutoResizeTextarea } from './AutoResizeTextarea'
@@ -12,6 +13,15 @@ type CardDetailDrawerProps = {
 }
 
 export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDelete }: CardDetailDrawerProps) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !event.isComposing) onClose()
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <aside className={styles.drawer} aria-label="論点の詳細">
       <div className={styles.drawerHeader}>

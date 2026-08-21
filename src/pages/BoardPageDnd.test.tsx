@@ -6,8 +6,15 @@ import { App } from '../App'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
 
 vi.mock('./BoardDnd', () => ({
-  BoardDnd: ({ cards, onMove }: { cards: Card[]; onMove: (cardId: string, status: CardStatus, index: number) => void }) => (
+  BoardDnd: ({ cards, onMove, onSelect, onDragStart }: {
+    cards: Card[]
+    onMove: (cardId: string, status: CardStatus, index: number) => void
+    onSelect: (cardId: string) => void
+    onDragStart?: (cardId: string) => void
+  }) => (
     <div>
+      <button type="button" onClick={() => onSelect('A')}>カードAを開く</button>
+      <button type="button" onClick={() => onDragStart?.('B')}>DnD開始</button>
       <button type="button" onClick={() => onMove('B', 'DISCUSSING', 1)}>DnD移動を完了</button>
       {cards.map((card) => <span key={card.id}>{`${card.id}:${card.status}:${card.order}`}</span>)}
     </div>
@@ -39,6 +46,10 @@ describe('BoardPage DnD connection', () => {
 
   it('DnD結果をRepositoryへ保存し、件数と再生成後の表示へ反映する', () => {
     const rendered = render(<MemoryRouter initialEntries={['/boards/board-1']}><App /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: 'カードAを開く' }))
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'DnD開始' }))
+    expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'DnD移動を完了' }))
 
     const updated = repository.findById('board-1')!

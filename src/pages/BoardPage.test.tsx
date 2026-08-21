@@ -198,6 +198,20 @@ describe('BoardPage', () => {
     expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
   })
 
+  it('Escapeでドロワーを閉じても編集済みの内容を保存し、Escape以外のキーでは閉じない', () => {
+    repository.save(board({ cards: [{ id: 'card-1', title: '論点', memo: '元のメモ', decision: '', status: 'UNSORTED', order: 0 }] }))
+    renderBoard()
+    fireEvent.click(screen.getByRole('button', { name: '論点元のメモ' }))
+    fireEvent.change(screen.getByLabelText('自由メモ'), { target: { value: '保存するメモ' } })
+
+    fireEvent.keyDown(document, { key: 'Enter' })
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
+    expect(repository.findById('board-1')?.cards[0]).toMatchObject({ memo: '保存するメモ' })
+  })
+
   it('状態変更で元列と移動先列のorderを正規化し、末尾へ移動する', () => {
     repository.save(board({ cards: [
       { id: 'a', title: 'A', memo: '', decision: '', status: 'UNSORTED', order: 2 },

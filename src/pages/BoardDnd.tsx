@@ -79,15 +79,18 @@ type BoardDndProps = {
   cards: Card[]
   onMove: (cardId: string, targetStatus: CardStatus, targetIndex: number) => void
   onSelect: (cardId: string) => void
+  onDragStart?: (cardId: string) => void
 }
 
-export function BoardDnd({ cards, onMove, onSelect }: BoardDndProps) {
+export function BoardDnd({ cards, onMove, onSelect, onDragStart }: BoardDndProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
   const activeCard = cards.find((card) => card.id === activeCardId)
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveCardId(event.active.data.current?.cardId as string | undefined ?? null)
+    const cardId = event.active.data.current?.cardId as string | undefined
+    setActiveCardId(cardId ?? null)
+    if (cardId) onDragStart?.(cardId)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
