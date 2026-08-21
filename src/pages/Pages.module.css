@@ -1,5 +1,22 @@
-.page {
-  margin: 0;
-  padding: 2rem;
-  font-family: system-ui, sans-serif;
-}
+.page { max-width: 960px; margin: 0 auto; padding: 2rem; color: #1d2939; font-family: system-ui, sans-serif; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.header h1, .boardCard h2 { margin: 0; }
+.header p, .updatedAt { color: #667085; }
+.primaryButton { padding: 0.6rem 0.9rem; color: #fff; background: #155eef; border: 1px solid #155eef; border-radius: 0.4rem; }
+.form { display: grid; gap: 0.65rem; padding: 1rem; margin-bottom: 1rem; background: #f8fafc; border: 1px solid #d0d5dd; border-radius: 0.5rem; }
+.form input { padding: 0.55rem; border: 1px solid #98a2b3; border-radius: 0.35rem; }
+.formActions { display: flex; gap: 0.5rem; }
+.emptyState { padding: 2rem; text-align: center; color: #475467; background: #f8fafc; border: 1px dashed #98a2b3; border-radius: 0.5rem; }
+.boardGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.boardCard { position: relative; overflow: visible; background: #fff; border: 1px solid #d0d5dd; border-radius: 0.5rem; box-shadow: 0 1px 2px rgb(16 24 40 / 5%); }
+.boardLink { display: block; padding: 1rem; color: inherit; text-align: left; text-decoration: none; }
+.boardLink:hover { background: #f8fafc; }
+.statusCounts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin: 1rem 0; }
+.statusCounts div { display: flex; justify-content: space-between; }
+.statusCounts dt, .statusCounts dd { margin: 0; }
+.statusCounts dd { font-weight: 700; }
+.updatedAt { margin: 0; font-size: 0.875rem; }
+.boardActions { position: absolute; top: 0.75rem; right: 0.75rem; }
+.menu { position: absolute; z-index: 1; right: 0; display: grid; min-width: 6rem; padding: 0.25rem; background: #fff; border: 1px solid #d0d5dd; border-radius: 0.35rem; box-shadow: 0 4px 8px rgb(16 24 40 / 12%); }
+.menu button { padding: 0.4rem; text-align: left; background: #fff; border: 0; }
+.menu button:hover { background: #f2f4f7; }
