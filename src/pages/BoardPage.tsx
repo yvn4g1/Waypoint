@@ -1,27 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CARD_STATUSES, CARD_STATUS_LABELS, countCardsByStatus, type Board, type Card, type CardStatus } from '../domain/Board'
+import { cardsForStatus, moveCard } from '../domain/CardOrdering'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
+import { BoardDnd } from './BoardDnd'
 import { CardDetailDrawer } from './CardDetailDrawer'
 import styles from './Pages.module.css'
 
 const boardRepository = new LocalStorageBoardRepository()
 
-function previewFor(card: Card): string {
-  if (card.status === 'DECIDED' && card.decision.trim()) return card.decision
-  return card.memo
-}
-
-function cardsForStatus(board: Board, status: CardStatus): Card[] {
-  return board.cards.filter((card) => card.status === status).sort((left, right) => left.order - right.order)
-}
-
 function normalizeOrders(cards: Card[]): Card[] {
   return [...cards].sort((left, right) => left.order - right.order).map((card, order) => ({ ...card, order }))
-}
-
-function assignOrders(cards: Card[]): Card[] {
-  return cards.map((card, order) => ({ ...card, order }))
 }
 
 export function BoardPage() {
@@ -51,7 +40,7 @@ export function BoardPage() {
     event.preventDefault()
     const title = cardTitle.trim()
     if (!title) return
-    const unsortedCards = cardsForStatus(board, 'UNSORTED')
+    const unsortedCards = cardsForStatus(board.cards, 'UNSORTED')
     const order = unsortedCards.length === 0 ? 0 : Math.max(...unsortedCards.map((card) => card.order)) + 1
     const updatedBoard: Board = {
       ...board,
@@ -89,16 +78,19 @@ export function BoardPage() {
 
   const changeCardStatus = (status: CardStatus) => {
     if (!selectedCard || selectedCard.status === status) return
-    const sourceCards = cardsForStatus(board, selectedCard.status).filter((card) => card.id !== selectedCard.id)
-    const targetCards = cardsForStatus(board, status)
-    const normalizedCards = [...normalizeOrders(sourceCards), ...assignOrders([...normalizeOrders(targetCards), { ...selectedCard, status }])]
-    const replacements = new Map(normalizedCards.map((card) => [card.id, card]))
-    saveBoard({ ...board, updatedAt: new Date().toISOString(), cards: board.cards.map((card) => replacements.get(card.id) ?? card) })
+    const movedCards = moveCard(board.cards, selectedCard.id, status, cardsForStatus(board.cards, status).length)
+    saveBoard({ ...board, updatedAt: new Date().toISOString(), cards: movedCards })
+  }
+
+  const moveCardByDnd = (cardId: string, status: CardStatus, targetIndex: number) => {
+    const movedCards = moveCard(board.cards, cardId, status, targetIndex)
+    if (movedCards === board.cards) return
+    saveBoard({ ...board, updatedAt: new Date().toISOString(), cards: movedCards })
   }
 
   const deleteCard = () => {
     if (!selectedCard || !window.confirm(`「${selectedCard.title}」を削除しますか？`)) return
-    const remainingInColumn = normalizeOrders(cardsForStatus(board, selectedCard.status).filter((card) => card.id !== selectedCard.id))
+    const remainingInColumn = normalizeOrders(cardsForStatus(board.cards, selectedCard.status).filter((card) => card.id !== selectedCard.id))
     const replacements = new Map(remainingInColumn.map((card) => [card.id, card]))
     saveBoard({
       ...board,
@@ -144,16 +136,7 @@ export function BoardPage() {
         </div>
       </form>}
 
-      <div className={styles.boardColumns}>
-        {CARD_STATUSES.map((status) => (
-          <section className={styles.boardColumn} aria-label={`${CARD_STATUS_LABELS[status]}の列`} key={status}>
-            <h2>{CARD_STATUS_LABELS[status]}</h2>
-            {cardsForStatus(board, status).map((card) => <button type="button" className={styles.card} key={card.id} onClick={() => setSelectedCardId(card.id)}>
-              <span className={styles.cardTitle}>{card.title}</span><span className={styles.cardPreview}>{previewFor(card)}</span>
-            </button>)}
-          </section>
-        ))}
-      </div>
+      <BoardDnd cards={board.cards} onMove={moveCardByDnd} onSelect={setSelectedCardId} />
       {selectedCard && <CardDetailDrawer card={selectedCard} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
     </main>
   )
