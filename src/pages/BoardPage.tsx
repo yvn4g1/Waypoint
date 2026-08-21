@@ -136,7 +136,7 @@ export function BoardPage() {
         </div>
       </form>}
 
-      <BoardDnd cards={board.cards} onMove={moveCardByDnd} onSelect={setSelectedCardId} />
+      <BoardDnd cards={board.cards} onMove={moveCardByDnd} onSelect={(cardId) => setSelectedCardId((current) => current === cardId ? null : cardId)} />
       {selectedCard && <CardDetailDrawer card={selectedCard} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
     </main>
   )

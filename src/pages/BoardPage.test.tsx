@@ -158,6 +158,26 @@ describe('BoardPage', () => {
     expect(screen.getByRole('button', { name: '変更後タイトル更新した決定' })).toBeInTheDocument()
   })
 
+  it('同じカードの再クリックでドロワーを閉じ、別カードのクリックで表示を切り替える', () => {
+    repository.save(board({ cards: [
+      { id: 'a', title: 'カードA', memo: 'Aのメモ', decision: '', status: 'UNSORTED', order: 0 },
+      { id: 'b', title: 'カードB', memo: 'Bのメモ', decision: '', status: 'UNSORTED', order: 1 },
+    ] }))
+    renderBoard()
+
+    fireEvent.click(screen.getByRole('button', { name: 'カードAAのメモ' }))
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toBeInTheDocument()
+    expect(screen.getByLabelText('タイトル')).toHaveValue('カードA')
+    fireEvent.click(screen.getByRole('button', { name: 'カードAAのメモ' }))
+    expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'カードAAのメモ' }))
+    fireEvent.click(screen.getByRole('button', { name: 'カードBBのメモ' }))
+    expect(screen.getByLabelText('タイトル')).toHaveValue('カードB')
+    fireEvent.click(screen.getByRole('button', { name: '詳細を閉じる' }))
+    expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
+  })
+
   it('状態変更で元列と移動先列のorderを正規化し、末尾へ移動する', () => {
     repository.save(board({ cards: [
       { id: 'a', title: 'A', memo: '', decision: '', status: 'UNSORTED', order: 2 },
