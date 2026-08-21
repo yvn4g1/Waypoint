@@ -24,9 +24,16 @@
 .menu button { padding: 0.4rem; text-align: left; background: #fff; border: 0; }
 .menu button:hover { background: #f2f4f7; }
 .boardPage { max-width: 1440px; }
-.boardHeader { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-.boardTitle { flex: 1; }
+.boardHeader { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.boardTitle { flex: 1; min-width: 12rem; }
 .boardTitle h1 { margin: 0; }
+.currentTopic { box-sizing: border-box; flex: 0 1 18rem; min-width: 13rem; padding: 0.5rem 0.65rem; background: #fffcf5; border: 1px solid #e5b85c; border-radius: 0.5rem; }
+.currentTopicLabel { display: block; margin-bottom: 0.2rem; color: #667085; font-size: 0.75rem; font-weight: 700; }
+.currentTopicContent { display: flex; align-items: center; gap: 0.4rem; min-width: 0; }
+.currentTopicTitle { flex: 1; min-width: 0; padding: 0; overflow: hidden; color: #1d2939; font: inherit; font-weight: 700; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: grab; background: transparent; border: 0; }
+.currentTopicClear { flex: none; padding: 0.15rem 0.35rem; color: #667085; font-size: 0.75rem; background: #fff; border: 1px solid #d0d5dd; border-radius: 0.3rem; }
+.currentTopicEmpty { display: block; color: #667085; font-size: 0.875rem; }
+.currentTopicOver { background: #eff4ff; border-color: #84adff; }
 .summaryCounts { display: flex; gap: 0.7rem; margin: 0; }
 .summaryCounts div { display: grid; gap: 0.1rem; text-align: center; }
 .summaryCounts dt, .summaryCounts dd { margin: 0; }
@@ -42,7 +49,9 @@
 .boardColumn[data-status='DECIDED'] { background: #f0fdf4; }
 .boardColumn[data-status='DECIDED'] h2 { border-left-color: #74c69d; }
 .card { display: block; width: 100%; padding: 0.75rem; margin-bottom: 0.65rem; text-align: left; cursor: pointer; background: #fff; border: 1px solid #d0d5dd; border-radius: 0.4rem; }
-.cardTitle { display: block; margin-bottom: 0.35rem; font-size: 0.95rem; font-weight: 700; }
+.cardHeading { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
+.cardTitle { display: block; min-width: 0; overflow: hidden; font-size: 0.95rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.currentBadge { flex: none; padding: 0.1rem 0.3rem; color: #7a5d00; font-size: 0.7rem; font-weight: 700; background: #fffaeb; border: 1px solid #e5b85c; border-radius: 999px; }
 .cardPreview { display: block; overflow: hidden; color: #667085; white-space: nowrap; text-overflow: ellipsis; }
 .drawer { position: fixed; z-index: 2; top: 0; right: 0; display: grid; align-content: start; gap: 0.55rem; box-sizing: border-box; width: min(26rem, 100vw); height: 100dvh; max-height: 100dvh; padding: 1.25rem; overflow-x: hidden; overflow-y: auto; background: #fff; border-left: 1px solid #d0d5dd; box-shadow: -4px 0 16px rgb(16 24 40 / 16%); }
 .drawerHeader { display: flex; align-items: center; justify-content: space-between; }

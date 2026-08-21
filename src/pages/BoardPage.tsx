@@ -4,7 +4,7 @@ import { CARD_STATUSES, CARD_STATUS_LABELS, countCardsByStatus, type Board, type
 import { cardsForStatus, moveCard } from '../domain/CardOrdering'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
 import { downloadBoardExport } from './boardExportDownload'
-import { BoardDnd } from './BoardDnd'
+import { BoardDnd, type BoardDragSource } from './BoardDnd'
 import { CardDetailDrawer } from './CardDetailDrawer'
 import styles from './Pages.module.css'
 
@@ -83,10 +83,28 @@ export function BoardPage() {
     saveBoard({ ...board, updatedAt: new Date().toISOString(), cards: movedCards })
   }
 
-  const moveCardByDnd = (cardId: string, status: CardStatus, targetIndex: number) => {
+  const setCurrentCard = (cardId: string) => {
+    if (board.currentCardId !== cardId) {
+      saveBoard({ ...board, currentCardId: cardId, updatedAt: new Date().toISOString() })
+    }
+    setSelectedCardId(cardId)
+  }
+
+  const clearCurrentCard = () => {
+    if (board.currentCardId === undefined || board.currentCardId === null) return
+    saveBoard({ ...board, currentCardId: null, updatedAt: new Date().toISOString() })
+  }
+
+  const moveCardByDnd = (cardId: string, status: CardStatus, targetIndex: number, source: BoardDragSource) => {
     const movedCards = moveCard(board.cards, cardId, status, targetIndex)
-    if (movedCards === board.cards) return
-    saveBoard({ ...board, updatedAt: new Date().toISOString(), cards: movedCards })
+    const shouldClearCurrent = source === 'current' && board.currentCardId === cardId
+    if (movedCards === board.cards && !shouldClearCurrent) return
+    saveBoard({
+      ...board,
+      currentCardId: shouldClearCurrent ? null : board.currentCardId,
+      updatedAt: new Date().toISOString(),
+      cards: movedCards,
+    })
   }
 
   const deleteCard = () => {
@@ -95,6 +113,7 @@ export function BoardPage() {
     const replacements = new Map(remainingInColumn.map((card) => [card.id, card]))
     saveBoard({
       ...board,
+      currentCardId: board.currentCardId === selectedCard.id ? null : board.currentCardId,
       updatedAt: new Date().toISOString(),
       cards: board.cards.filter((card) => card.id !== selectedCard.id).map((card) => replacements.get(card.id) ?? card),
     })
@@ -103,42 +122,52 @@ export function BoardPage() {
 
   return (
     <main className={`${styles.page} ${styles.boardPage}`}>
-      <header className={styles.boardHeader}>
-        <Link to="/">← ボード一覧</Link>
-        <div className={styles.boardTitle}><h1>{board.title}</h1></div>
-        <dl className={styles.summaryCounts} aria-label="状態別件数">
-          {CARD_STATUSES.map((status) => <div key={status}><dt>{CARD_STATUS_LABELS[status]}</dt><dd>{counts[status]}件</dd></div>)}
-        </dl>
-        <button type="button" className={styles.primaryButton} onClick={() => setIsAdding(true)}>＋論点</button>
-        <div className={styles.headerActions}>
-          <button type="button" aria-label="ボード管理メニュー" aria-expanded={isMenuOpen} onClick={() => setIsMenuOpen(!isMenuOpen)}>管理</button>
-          {isMenuOpen && <div className={styles.menu}>
-            <button type="button" onClick={() => { setRenameTitle(board.title); setIsRenaming(true); setIsMenuOpen(false) }}>名前変更</button>
-            <button type="button" onClick={() => { downloadBoardExport(board); setIsMenuOpen(false) }}>JSONエクスポート</button>
-            <button type="button" onClick={deleteBoard}>削除</button>
-          </div>}
-        </div>
-      </header>
+      <BoardDnd
+        cards={board.cards}
+        currentCardId={board.currentCardId}
+        onClearCurrent={clearCurrentCard}
+        onMove={moveCardByDnd}
+        onSelect={(cardId) => setSelectedCardId((current) => current === cardId ? null : cardId)}
+        onSetCurrent={setCurrentCard}
+        onDragStart={() => setSelectedCardId(null)}
+        renderHeader={(currentTopic) => <>
+          <header className={styles.boardHeader}>
+            <Link to="/">← ボード一覧</Link>
+            <div className={styles.boardTitle}><h1>{board.title}</h1></div>
+            {currentTopic}
+            <dl className={styles.summaryCounts} aria-label="状態別件数">
+              {CARD_STATUSES.map((status) => <div key={status}><dt>{CARD_STATUS_LABELS[status]}</dt><dd>{counts[status]}件</dd></div>)}
+            </dl>
+            <button type="button" className={styles.primaryButton} onClick={() => setIsAdding(true)}>＋論点</button>
+            <div className={styles.headerActions}>
+              <button type="button" aria-label="ボード管理メニュー" aria-expanded={isMenuOpen} onClick={() => setIsMenuOpen(!isMenuOpen)}>管理</button>
+              {isMenuOpen && <div className={styles.menu}>
+                <button type="button" onClick={() => { setRenameTitle(board.title); setIsRenaming(true); setIsMenuOpen(false) }}>名前変更</button>
+                <button type="button" onClick={() => { downloadBoardExport(board); setIsMenuOpen(false) }}>JSONエクスポート</button>
+                <button type="button" onClick={deleteBoard}>削除</button>
+              </div>}
+            </div>
+          </header>
 
-      {isAdding && <form className={styles.form} onSubmit={addCard}>
-        <label htmlFor="new-card-title">論点のタイトル</label>
-        <input id="new-card-title" value={cardTitle} onChange={(event) => setCardTitle(event.target.value)} autoFocus />
-        <div className={styles.formActions}>
-          <button type="submit" className={styles.primaryButton}>追加</button>
-          <button type="button" onClick={() => setIsAdding(false)}>キャンセル</button>
-        </div>
-      </form>}
+          {isAdding && <form className={styles.form} onSubmit={addCard}>
+            <label htmlFor="new-card-title">論点のタイトル</label>
+            <input id="new-card-title" value={cardTitle} onChange={(event) => setCardTitle(event.target.value)} autoFocus />
+            <div className={styles.formActions}>
+              <button type="submit" className={styles.primaryButton}>追加</button>
+              <button type="button" onClick={() => setIsAdding(false)}>キャンセル</button>
+            </div>
+          </form>}
 
-      {isRenaming && <form className={styles.form} onSubmit={renameBoard}>
-        <label htmlFor="board-title">ボード名</label>
-        <input id="board-title" value={renameTitle} onChange={(event) => setRenameTitle(event.target.value)} autoFocus />
-        <div className={styles.formActions}>
-          <button type="submit" className={styles.primaryButton}>保存</button>
-          <button type="button" onClick={() => setIsRenaming(false)}>キャンセル</button>
-        </div>
-      </form>}
-
-      <BoardDnd cards={board.cards} onMove={moveCardByDnd} onSelect={(cardId) => setSelectedCardId((current) => current === cardId ? null : cardId)} onDragStart={() => setSelectedCardId(null)} />
+          {isRenaming && <form className={styles.form} onSubmit={renameBoard}>
+            <label htmlFor="board-title">ボード名</label>
+            <input id="board-title" value={renameTitle} onChange={(event) => setRenameTitle(event.target.value)} autoFocus />
+            <div className={styles.formActions}>
+              <button type="submit" className={styles.primaryButton}>保存</button>
+              <button type="button" onClick={() => setIsRenaming(false)}>キャンセル</button>
+            </div>
+          </form>}
+        </>}
+      />
       {selectedCard && <CardDetailDrawer card={selectedCard} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
     </main>
   )

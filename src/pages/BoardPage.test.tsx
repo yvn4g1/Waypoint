@@ -212,6 +212,90 @@ describe('BoardPage', () => {
     expect(repository.findById('board-1')?.cards[0]).toMatchObject({ memo: '保存するメモ' })
   })
 
+  it('現在の論点を表示してDrawerと連動し、status変更やDrawer closeでは維持して解除だけを保存する', () => {
+    const cards = [
+      { id: 'current', title: '現在のカード', memo: '現在メモ', decision: '', status: 'UNSORTED' as const, order: 0 },
+      { id: 'other', title: '別カード', memo: '', decision: '', status: 'UNSORTED' as const, order: 1 },
+    ]
+    repository.save(board({ cards, currentCardId: 'current' }))
+    renderBoard()
+
+    const currentTopic = within(screen.getByRole('region', { name: '現在の論点' }))
+    expect(currentTopic.getByRole('button', { name: '現在のカード' })).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: '未整理の列' })).getByText('現在')).toBeInTheDocument()
+
+    fireEvent.click(currentTopic.getByRole('button', { name: '現在のカード' }))
+    fireEvent.change(screen.getByLabelText('タイトル'), { target: { value: '更新した現在カード' } })
+    expect(currentTopic.getByRole('button', { name: '更新した現在カード' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('状態'), { target: { value: 'DISCUSSING' } })
+    expect(repository.findById('board-1')?.currentCardId).toBe('current')
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
+    expect(repository.findById('board-1')?.currentCardId).toBe('current')
+
+    fireEvent.click(currentTopic.getByRole('button', { name: '更新した現在カード' }))
+    fireEvent.click(screen.getByRole('button', { name: '詳細を閉じる' }))
+    expect(repository.findById('board-1')?.currentCardId).toBe('current')
+
+    fireEvent.click(currentTopic.getByRole('button', { name: '更新した現在カード' }))
+    fireEvent.click(currentTopic.getByRole('button', { name: '更新した現在カード' }))
+    expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
+    expect(repository.findById('board-1')?.currentCardId).toBe('current')
+
+    fireEvent.click(currentTopic.getByRole('button', { name: '解除' }))
+    const updated = repository.findById('board-1')!
+    expect(updated.currentCardId).toBeNull()
+    expect(updated.cards.find((card) => card.id === 'current')).toMatchObject({ title: '更新した現在カード', status: 'DISCUSSING', order: 0 })
+    expect(screen.getByRole('region', { name: '現在の論点' })).toHaveTextContent('ここに論点をドラッグ')
+  })
+
+  it('dangling currentCardIdは安全に未設定表示し、現在Card削除時だけcurrentも解除する', () => {
+    repository.save(board({
+      currentCardId: 'missing',
+      cards: [{ id: 'current', title: '削除する現在Card', memo: '', decision: '', status: 'UNSORTED', order: 0 }],
+    }))
+    const dangling = renderBoard()
+    expect(screen.getByRole('region', { name: '現在の論点' })).toHaveTextContent('ここに論点をドラッグ')
+
+    dangling.unmount()
+    repository.save(board({
+      currentCardId: 'current',
+      cards: [
+        { id: 'current', title: '削除する現在Card', memo: '', decision: '', status: 'UNSORTED', order: 0 },
+        { id: 'other', title: '残るCard', memo: '', decision: '', status: 'UNSORTED', order: 1 },
+      ],
+    }))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    renderBoard()
+    fireEvent.click(within(screen.getByRole('region', { name: '未整理の列' })).getByRole('button', { name: '残るCard' }))
+    fireEvent.click(screen.getByRole('button', { name: '論点を削除' }))
+    expect(repository.findById('board-1')).toMatchObject({
+      currentCardId: 'current',
+      cards: [{ id: 'current', title: '削除する現在Card', status: 'UNSORTED', order: 0 }],
+    })
+
+    fireEvent.click(within(screen.getByRole('region', { name: '未整理の列' })).getByRole('button', { name: /削除する現在Card現在/ }))
+    fireEvent.click(screen.getByRole('button', { name: '論点を削除' }))
+    expect(repository.findById('board-1')).toMatchObject({
+      currentCardId: null,
+      cards: [],
+    })
+  })
+
+  it('一覧へ戻ってBoardを再開しても現在の論点を復元する', () => {
+    repository.save(board({
+      currentCardId: 'current',
+      cards: [{ id: 'current', title: '再開する現在Card', memo: '', decision: '', status: 'ON_HOLD', order: 0 }],
+    }))
+    renderBoard()
+    fireEvent.click(screen.getByRole('link', { name: '← ボード一覧' }))
+    fireEvent.click(screen.getByRole('link', { name: 'プロジェクト会議 を開く' }))
+
+    expect(within(screen.getByRole('region', { name: '現在の論点' })).getByRole('button', { name: '再開する現在Card' })).toBeInTheDocument()
+    expect(repository.findById('board-1')?.currentCardId).toBe('current')
+  })
+
   it('状態変更で元列と移動先列のorderを正規化し、末尾へ移動する', () => {
     repository.save(board({ cards: [
       { id: 'a', title: 'A', memo: '', decision: '', status: 'UNSORTED', order: 2 },

@@ -31,11 +31,23 @@ export function parseBoardExport(text: string): BoardImportParseResult {
 }
 
 export function createImportedBoard(exported: WaypointExport, now: string, createId: () => string): Board {
+  const id = createId()
+  const cardIds = new Map<string, string>()
+  const cards = exported.board.cards.map((card) => {
+    const id = createId()
+    cardIds.set(card.id, id)
+    return { ...card, id }
+  })
+  const currentCardId = typeof exported.board.currentCardId === 'string'
+    ? cardIds.get(exported.board.currentCardId)
+    : exported.board.currentCardId
+
   return {
     ...exported.board,
-    id: createId(),
+    id,
     updatedAt: now,
-    cards: exported.board.cards.map((card) => ({ ...card, id: createId() })),
+    cards,
+    currentCardId,
   }
 }
 

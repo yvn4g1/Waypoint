@@ -67,6 +67,16 @@ describe('LocalStorageBoardRepository', () => {
     expect(repository.findById('board-1')).toEqual(saved)
   })
 
+  it('currentCardIdのない旧BoardとcurrentCardIdを持つBoardをversion 1のまま復元する', () => {
+    const legacy = board('legacy')
+    localStorage.setItem(WAYPOINT_STORAGE_KEY, JSON.stringify({ version: 1, boards: [legacy] }))
+    expect(repository.findById('legacy')).toEqual(legacy)
+
+    const focused = { ...board('focused'), currentCardId: 'card-1', cards: [{ id: 'card-1', title: '現在', memo: '', decision: '', status: 'UNSORTED' as const, order: 0 }] }
+    repository.save(focused)
+    expect(repository.findById('focused')).toEqual(focused)
+  })
+
   it('壊れた LocalStorage データを空データとして安全に扱う', () => {
     localStorage.setItem(WAYPOINT_STORAGE_KEY, '{broken')
 

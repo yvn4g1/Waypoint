@@ -24,6 +24,7 @@ export type Board = {
   createdAt: string
   updatedAt: string
   cards: Card[]
+  currentCardId?: string | null
 }
 
 export function countCardsByStatus(board: Board): Record<CardStatus, number> {

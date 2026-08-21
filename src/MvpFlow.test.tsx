@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { CARD_STATUSES, CARD_STATUS_LABELS, type Card, type CardStatus } from './domain/Board'
@@ -7,12 +8,14 @@ import { cardsForStatus } from './domain/CardOrdering'
 import { LocalStorageBoardRepository } from './storage/LocalStorageBoardRepository'
 
 vi.mock('./pages/BoardDnd', () => ({
-  BoardDnd: ({ cards, onMove, onSelect }: {
+  BoardDnd: ({ cards, onMove, onSelect, renderHeader }: {
     cards: Card[]
     onMove: (cardId: string, status: CardStatus, index: number) => void
     onSelect: (cardId: string) => void
+    renderHeader: (currentTopic: ReactNode) => ReactNode
   }) => (
     <div>
+      {renderHeader(<div aria-label="現在の論点">ここに論点をドラッグ</div>)}
       {CARD_STATUSES.map((status) => {
         const statusCards = cardsForStatus(cards, status)
         return (

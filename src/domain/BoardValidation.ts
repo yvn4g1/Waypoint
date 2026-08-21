@@ -8,6 +8,7 @@ export function isBoard(value: unknown): value is Board {
     && typeof value.updatedAt === 'string'
     && Array.isArray(value.cards)
     && value.cards.every(isCard)
+    && (value.currentCardId === undefined || value.currentCardId === null || typeof value.currentCardId === 'string')
 }
 
 export function isCard(value: unknown): value is Card {

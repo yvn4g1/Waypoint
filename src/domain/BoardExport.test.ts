@@ -7,6 +7,7 @@ const board: Board = {
   title: '開発会議',
   createdAt: '2026-08-21T00:00:00.000Z',
   updatedAt: '2026-08-21T01:00:00.000Z',
+  currentCardId: 'card-original',
   cards: [
     { id: 'card-original', title: '論点', memo: 'メモ\n改行', decision: '決定', status: 'DECIDED', order: 3 },
   ],
@@ -38,6 +39,7 @@ describe('BoardExport', () => {
       id: 'board-imported',
       updatedAt: '2026-08-22T00:00:00.000Z',
       cards: [{ ...board.cards[0], id: 'card-imported' }],
+      currentCardId: 'card-imported',
     })
     expect(board).toEqual({ ...board, cards: [{ ...board.cards[0] }] })
   })
@@ -53,6 +55,18 @@ describe('BoardExport', () => {
 
     expect(first.id).not.toBe(second.id)
     expect(first.cards[0]?.id).not.toBe(second.cards[0]?.id)
+    expect(first.currentCardId).toBe(first.cards[0]?.id)
+    expect(second.currentCardId).toBe(second.cards[0]?.id)
+  })
+
+  it('currentCardIdのない旧version 1を読み込み、dangling currentはimport時に安全に解除する', () => {
+    const { currentCardId: _currentCardId, ...legacyBoard } = board
+    const legacy = parseBoardExport(JSON.stringify({ version: 1, board: legacyBoard }))
+    expect(legacy).toEqual({ ok: true, value: { version: 1, board: legacyBoard } })
+
+    const ids = ['board-imported', 'card-imported']
+    const dangling = createImportedBoard({ version: 1, board: { ...board, currentCardId: 'missing' } }, '2026-08-22T00:00:00.000Z', () => ids.shift()!)
+    expect(dangling.currentCardId).toBeUndefined()
   })
 
   it.each([
