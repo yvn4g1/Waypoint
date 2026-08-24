@@ -3,7 +3,7 @@ import type { Card, CardStatus } from '../domain/Board'
 import { CARD_STATUSES, CARD_STATUS_LABELS } from '../domain/Board'
 import { AutoResizeTextarea } from './AutoResizeTextarea'
 import styles from './Pages.module.css'
-import { allocateTextareaHeights } from './textareaHeight'
+import { allocateTextareaHeights, calculateTextareaAvailableHeight } from './textareaHeight'
 
 const MIN_TEXTAREA_HEIGHT = 76
 
@@ -27,9 +27,19 @@ export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDe
     const fields = [memoRef.current, decisionRef.current]
     if (!drawer || fields.some((field) => !field)) return
     const textareas = fields as HTMLTextAreaElement[]
-    const currentTotal = textareas.reduce((total, textarea) => total + textarea.offsetHeight, 0)
-    const fixedHeight = drawer.scrollHeight - currentTotal
-    const availableHeight = Math.max(drawer.clientHeight - fixedHeight, MIN_TEXTAREA_HEIGHT * 2)
+    const computedStyle = window.getComputedStyle(drawer)
+    const children = Array.from(drawer.children)
+    const availableHeight = calculateTextareaAvailableHeight({
+      drawerHeight: drawer.clientHeight,
+      paddingTop: Number.parseFloat(computedStyle.paddingTop) || 0,
+      paddingBottom: Number.parseFloat(computedStyle.paddingBottom) || 0,
+      fixedElementHeights: children
+        .filter((child) => !textareas.includes(child as HTMLTextAreaElement))
+        .map((child) => (child as HTMLElement).offsetHeight),
+      rowGap: Number.parseFloat(computedStyle.rowGap) || 0,
+      childCount: children.length,
+      minimumTotalHeight: MIN_TEXTAREA_HEIGHT * textareas.length,
+    })
     const naturalHeights = textareas.map((textarea) => {
       const previousHeight = textarea.style.height
       textarea.style.height = 'auto'

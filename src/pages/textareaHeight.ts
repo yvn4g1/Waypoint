@@ -4,6 +4,32 @@ export type TextareaHeightAllocation = {
   minimumHeight: number
 }
 
+export type TextareaAvailableHeight = {
+  drawerHeight: number
+  paddingTop: number
+  paddingBottom: number
+  fixedElementHeights: readonly number[]
+  rowGap: number
+  childCount: number
+  minimumTotalHeight: number
+}
+
+/** Calculates the textarea budget from the drawer's visible layout, not its scroll height. */
+export function calculateTextareaAvailableHeight({
+  drawerHeight,
+  paddingTop,
+  paddingBottom,
+  fixedElementHeights,
+  rowGap,
+  childCount,
+  minimumTotalHeight,
+}: TextareaAvailableHeight) {
+  const innerHeight = drawerHeight - paddingTop - paddingBottom
+  const fixedHeight = fixedElementHeights.reduce((total, height) => total + height, 0)
+  const gapHeight = Math.max(childCount - 1, 0) * rowGap
+  return Math.max(innerHeight - fixedHeight - gapHeight, minimumTotalHeight)
+}
+
 /**
  * Gives each field its needed height before sharing any remaining space.
  * This keeps a short field compact and lets a long neighbouring field use
