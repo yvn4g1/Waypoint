@@ -1,23 +1,21 @@
-import { useLayoutEffect, useRef, type TextareaHTMLAttributes } from 'react'
-
-const MAX_TEXTAREA_HEIGHT = 240
+import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, type TextareaHTMLAttributes } from 'react'
 
 type AutoResizeTextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> & {
   onChange: TextareaHTMLAttributes<HTMLTextAreaElement>['onChange']
+  height: number
+  onManualResize: (height: number) => void
 }
 
-export function AutoResizeTextarea({ onChange, value, ...props }: AutoResizeTextareaProps) {
+export const AutoResizeTextarea = forwardRef<HTMLTextAreaElement, AutoResizeTextareaProps>(function AutoResizeTextarea({ onChange, value, height, onManualResize, ...props }, forwardedRef) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isManuallyResizing = useRef(false)
+  useImperativeHandle(forwardedRef, () => textareaRef.current!, [])
 
-  const resize = () => {
+  useLayoutEffect(() => {
     const textarea = textareaRef.current
-    if (!textarea) return
-    textarea.style.height = 'auto'
-    textarea.style.height = `${Math.min(textarea.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`
-    textarea.style.overflowY = textarea.scrollHeight > MAX_TEXTAREA_HEIGHT ? 'auto' : 'hidden'
-  }
-
-  useLayoutEffect(resize, [value])
+    if (!textarea || isManuallyResizing.current) return
+    textarea.style.height = `${height}px`
+  }, [height, value])
 
   return (
     <textarea
@@ -25,10 +23,18 @@ export function AutoResizeTextarea({ onChange, value, ...props }: AutoResizeText
       ref={textareaRef}
       value={value}
       rows={3}
+      style={{ height }}
+      onPointerDown={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect()
+        isManuallyResizing.current = event.clientX >= bounds.right - 24 && event.clientY >= bounds.bottom - 24
+      }}
+      onPointerUp={(event) => {
+        if (isManuallyResizing.current) onManualResize(Math.max(event.currentTarget.offsetHeight, 76))
+        isManuallyResizing.current = false
+      }}
       onChange={(event) => {
-        resize()
         onChange?.(event)
       }}
     />
   )
-}
+})
