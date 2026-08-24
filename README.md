@@ -2,6 +2,8 @@
 
 Waypoint は、話し合いの「現在地」を可視化するためのシンプルな議論整理ツールです。
 
+[![Waypointのボード全体画面](./docs/images/waypoint-board-overview.png)](./docs/images/waypoint-board-overview.png)
+
 ## 目的
 
 通常のメモや議事録では埋もれやすい、
