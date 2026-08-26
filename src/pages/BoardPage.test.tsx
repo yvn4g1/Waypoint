@@ -198,6 +198,41 @@ describe('BoardPage', () => {
     expect(screen.queryByRole('complementary', { name: '論点の詳細' })).not.toBeInTheDocument()
   })
 
+  it('狭幅では決定Cardだけを左Drawerで開き、開いた後のstatus変更では位置を維持する', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => ({ matches: true, media: '(max-width: 1366px)', addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+    })
+    repository.save(board({ cards: [
+      { id: 'decided', title: '決定Card', memo: '', decision: '', status: 'DECIDED', order: 0 },
+      { id: 'unsorted', title: '未整理Card', memo: '', decision: '', status: 'UNSORTED', order: 0 },
+    ] }))
+    renderBoard()
+
+    fireEvent.click(screen.getByRole('button', { name: '決定Card' }))
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toHaveAttribute('data-side', 'left')
+    fireEvent.change(screen.getByLabelText('状態'), { target: { value: 'DISCUSSING' } })
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toHaveAttribute('data-side', 'left')
+    fireEvent.click(screen.getByRole('button', { name: '詳細を閉じる' }))
+
+    fireEvent.click(screen.getByRole('button', { name: '決定Card' }))
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toHaveAttribute('data-side', 'right')
+    fireEvent.click(screen.getByRole('button', { name: '詳細を閉じる' }))
+    fireEvent.click(screen.getByRole('button', { name: '未整理Card' }))
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toHaveAttribute('data-side', 'right')
+  })
+
+  it('広幅では決定Cardも右Drawerで開く', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => ({ matches: false, media: '(max-width: 1366px)', addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+    })
+    repository.save(board({ cards: [{ id: 'decided', title: '決定Card', memo: '', decision: '', status: 'DECIDED', order: 0 }] }))
+    renderBoard()
+    fireEvent.click(screen.getByRole('button', { name: '決定Card' }))
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toHaveAttribute('data-side', 'right')
+  })
+
   it('Escapeでドロワーを閉じても編集済みの内容を保存し、Escape以外のキーでは閉じない', () => {
     repository.save(board({ cards: [{ id: 'card-1', title: '論点', memo: '元のメモ', decision: '', status: 'UNSORTED', order: 0 }] }))
     renderBoard()

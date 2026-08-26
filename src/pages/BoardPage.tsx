@@ -24,6 +24,7 @@ export function BoardPage() {
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameTitle, setRenameTitle] = useState('')
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+  const [drawerSide, setDrawerSide] = useState<'left' | 'right'>('right')
 
   if (!board) {
     return <main className={styles.page}><h1>ボードが見つかりません</h1><Link to="/">ボード一覧へ戻る</Link></main>
@@ -87,6 +88,17 @@ export function BoardPage() {
     if (board.currentCardId !== cardId) {
       saveBoard({ ...board, currentCardId: cardId, updatedAt: new Date().toISOString() })
     }
+    openCard(cardId)
+  }
+
+  const openCard = (cardId: string) => {
+    if (selectedCardId === cardId) {
+      setSelectedCardId(null)
+      return
+    }
+    const card = board.cards.find((candidate) => candidate.id === cardId)
+    const isNarrow = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 1366px)').matches
+    setDrawerSide(isNarrow && card?.status === 'DECIDED' ? 'left' : 'right')
     setSelectedCardId(cardId)
   }
 
@@ -127,7 +139,7 @@ export function BoardPage() {
         currentCardId={board.currentCardId}
         onClearCurrent={clearCurrentCard}
         onMove={moveCardByDnd}
-        onSelect={(cardId) => setSelectedCardId((current) => current === cardId ? null : cardId)}
+        onSelect={openCard}
         onSetCurrent={setCurrentCard}
         onDragStart={() => setSelectedCardId(null)}
         renderHeader={(currentTopic) => <>
@@ -168,7 +180,7 @@ export function BoardPage() {
           </form>}
         </>}
       />
-      {selectedCard && <CardDetailDrawer card={selectedCard} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
+      {selectedCard && <CardDetailDrawer card={selectedCard} side={drawerSide} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
     </main>
   )
 }

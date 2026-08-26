@@ -8,30 +8,35 @@ type AutoResizeTextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>,
 
 export const AutoResizeTextarea = forwardRef<HTMLTextAreaElement, AutoResizeTextareaProps>(function AutoResizeTextarea({ onChange, value, height, onManualResize, ...props }, forwardedRef) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const isManuallyResizing = useRef(false)
+  const appliedHeight = useRef(height)
   useImperativeHandle(forwardedRef, () => textareaRef.current!, [])
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current
-    if (!textarea || isManuallyResizing.current) return
+    if (!textarea) return
+    appliedHeight.current = height
     textarea.style.height = `${height}px`
-  }, [height, value])
+  }, [height])
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current
+    if (!textarea || !('ResizeObserver' in window)) return
+    const observer = new ResizeObserver(() => {
+      const actualHeight = textarea.offsetHeight
+      const expectedHeight = appliedHeight.current
+      if (actualHeight && Math.abs(actualHeight - expectedHeight) > 1) onManualResize(actualHeight)
+    })
+    observer.observe(textarea)
+    return () => observer.disconnect()
+  }, [onManualResize])
 
   return (
     <textarea
       {...props}
       ref={textareaRef}
       value={value}
-      rows={3}
+      rows={1}
       style={{ height }}
-      onPointerDown={(event) => {
-        const bounds = event.currentTarget.getBoundingClientRect()
-        isManuallyResizing.current = event.clientX >= bounds.right - 24 && event.clientY >= bounds.bottom - 24
-      }}
-      onPointerUp={(event) => {
-        if (isManuallyResizing.current) onManualResize(Math.max(event.currentTarget.offsetHeight, 76))
-        isManuallyResizing.current = false
-      }}
       onChange={(event) => {
         onChange?.(event)
       }}

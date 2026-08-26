@@ -5,7 +5,7 @@ import { AutoResizeTextarea } from './AutoResizeTextarea'
 import styles from './Pages.module.css'
 import { allocateTextareaHeights, calculateTextareaAvailableHeight } from './textareaHeight'
 
-const MIN_TEXTAREA_HEIGHT = 76
+export const MIN_TEXTAREA_HEIGHT = 44
 
 type CardDetailDrawerProps = {
   card: Card
@@ -13,14 +13,15 @@ type CardDetailDrawerProps = {
   onChange: (field: 'title' | 'memo' | 'decision', value: string) => void
   onStatusChange: (status: CardStatus) => void
   onDelete: () => void
+  side: 'left' | 'right'
 }
 
-export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDelete }: CardDetailDrawerProps) {
+export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDelete, side }: CardDetailDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null)
   const memoRef = useRef<HTMLTextAreaElement>(null)
   const decisionRef = useRef<HTMLTextAreaElement>(null)
   const [heights, setHeights] = useState([MIN_TEXTAREA_HEIGHT, MIN_TEXTAREA_HEIGHT])
-  const manualHeights = useRef<number[] | null>(null)
+  const manualHeights = useRef<Array<number | null>>([null, null])
 
   const recalculate = () => {
     const drawer = drawerRef.current
@@ -48,11 +49,11 @@ export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDe
       return naturalHeight
     })
     const automatic = allocateTextareaHeights({ availableHeight, naturalHeights, minimumHeight: MIN_TEXTAREA_HEIGHT })
-    setHeights(manualHeights.current ?? automatic)
+    setHeights(automatic.map((height, index) => manualHeights.current[index] ?? height))
   }
 
   useLayoutEffect(() => {
-    manualHeights.current = null
+    manualHeights.current = [null, null]
     recalculate()
   }, [card.id])
 
@@ -73,11 +74,9 @@ export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDe
   }, [])
 
   const setManualHeight = (index: number, height: number) => {
-    const other = index === 0 ? 1 : 0
     const next = [...heights]
     next[index] = Math.max(height, MIN_TEXTAREA_HEIGHT)
-    next[other] = Math.max(next[other], MIN_TEXTAREA_HEIGHT)
-    manualHeights.current = next
+    manualHeights.current[index] = next[index]
     setHeights(next)
   }
 
@@ -91,7 +90,7 @@ export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDe
   }, [onClose])
 
   return (
-    <aside ref={drawerRef} className={styles.drawer} aria-label="論点の詳細">
+    <aside ref={drawerRef} className={`${styles.drawer} ${side === 'left' ? styles.drawerLeft : ''}`} data-side={side} aria-label="論点の詳細">
       <div className={styles.drawerHeader}>
         <h2>論点の詳細</h2>
         <button type="button" aria-label="詳細を閉じる" onClick={onClose}>閉じる</button>

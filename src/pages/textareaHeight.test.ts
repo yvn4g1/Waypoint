@@ -3,16 +3,16 @@ import { allocateTextareaHeights, calculateTextareaAvailableHeight } from './tex
 
 describe('allocateTextareaHeights', () => {
   it('keeps a short field compact and gives remaining space to the long field', () => {
-    expect(allocateTextareaHeights({ availableHeight: 680, naturalHeights: [600, 80], minimumHeight: 76 })).toEqual([600, 80])
+    expect(allocateTextareaHeights({ availableHeight: 680, naturalHeights: [600, 44], minimumHeight: 44 })).toEqual([600, 44])
   })
 
   it('shares a constrained budget after preserving both minimum heights', () => {
-    expect(allocateTextareaHeights({ availableHeight: 400, naturalHeights: [600, 600], minimumHeight: 76 })).toEqual([200, 200])
+    expect(allocateTextareaHeights({ availableHeight: 400, naturalHeights: [600, 600], minimumHeight: 44 })).toEqual([200, 200])
   })
 })
 
 describe('calculateTextareaAvailableHeight', () => {
-  const minimumTotalHeight = 152
+  const minimumTotalHeight = 88
 
   it('uses unused space in a large drawer rather than treating it as fixed content', () => {
     expect(calculateTextareaAvailableHeight({
@@ -33,7 +33,7 @@ describe('calculateTextareaAvailableHeight', () => {
       drawerHeight: 900, paddingTop: 20, paddingBottom: 20,
       fixedElementHeights: [40, 24, 38, 24, 24, 24, 38, 38], rowGap: 9, childCount: 10, minimumTotalHeight,
     })
-    expect(allocateTextareaHeights({ availableHeight, naturalHeights: [600, 76], minimumHeight: 76 })).toEqual([453, 76])
+    expect(allocateTextareaHeights({ availableHeight, naturalHeights: [600, 44], minimumHeight: 44 })).toEqual([485, 44])
   })
 
   it('shares the correctly measured budget when both fields are long', () => {
@@ -41,6 +41,6 @@ describe('calculateTextareaAvailableHeight', () => {
       drawerHeight: 900, paddingTop: 20, paddingBottom: 20,
       fixedElementHeights: [40, 24, 38, 24, 24, 24, 38, 38], rowGap: 9, childCount: 10, minimumTotalHeight,
     })
-    expect(allocateTextareaHeights({ availableHeight, naturalHeights: [600, 600], minimumHeight: 76 })).toEqual([264.5, 264.5])
+    expect(allocateTextareaHeights({ availableHeight, naturalHeights: [600, 600], minimumHeight: 44 })).toEqual([264.5, 264.5])
   })
 })

@@ -54,10 +54,11 @@
 .currentBadge { flex: none; padding: 0.1rem 0.3rem; color: #7a5d00; font-size: 0.7rem; font-weight: 700; background: #fffaeb; border: 1px solid #e5b85c; border-radius: 999px; }
 .cardPreview { display: block; overflow: hidden; color: #667085; white-space: nowrap; text-overflow: ellipsis; }
 .drawer { position: fixed; z-index: 2; top: 0; right: 0; display: grid; align-content: start; gap: 0.55rem; box-sizing: border-box; width: min(26rem, 100vw); height: 100dvh; max-height: 100dvh; padding: 1.25rem; overflow-x: hidden; overflow-y: auto; background: #fff; border-left: 1px solid #d0d5dd; box-shadow: -4px 0 16px rgb(16 24 40 / 16%); }
+.drawerLeft { right: auto; left: 0; border-right: 1px solid #d0d5dd; border-left: 0; box-shadow: 4px 0 16px rgb(16 24 40 / 16%); }
 .drawerHeader { display: flex; align-items: center; justify-content: space-between; }
 .drawerHeader h2 { margin: 0; }
 .drawer input, .drawer textarea, .drawer select { box-sizing: border-box; width: 100%; min-width: 0; padding: 0.55rem; font: inherit; border: 1px solid #98a2b3; border-radius: 0.35rem; }
-.drawer textarea { min-height: 4.75rem; resize: vertical; overflow-y: auto; }
+.drawer textarea { min-height: 2.75rem; resize: vertical; overflow-y: auto; }
 .deleteButton { align-self: end; padding: 0.6rem; color: #b42318; background: #fff; border: 1px solid #b42318; border-radius: 0.35rem; }
 .dragging { opacity: 0.35; }
 .boardColumn.columnOver { background: #eff4ff; border-color: #84adff; }
