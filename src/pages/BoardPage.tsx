@@ -85,20 +85,22 @@ export function BoardPage() {
   }
 
   const setCurrentCard = (cardId: string) => {
-    if (board.currentCardId !== cardId) {
-      saveBoard({ ...board, currentCardId: cardId, updatedAt: new Date().toISOString() })
-    }
-    openCard(cardId)
+    const card = board.cards.find((candidate) => candidate.id === cardId)
+    if (!card) return
+    const cards = card.status === 'DISCUSSING'
+      ? board.cards
+      : moveCard(board.cards, cardId, 'DISCUSSING', cardsForStatus(board.cards, 'DISCUSSING').length)
+    saveBoard({ ...board, cards, currentCardId: cardId, updatedAt: new Date().toISOString() })
+    openCard(cardId, cards.find((candidate) => candidate.id === cardId), true)
   }
 
-  const openCard = (cardId: string) => {
-    if (selectedCardId === cardId) {
+  const openCard = (cardId: string, cardForSide = board.cards.find((candidate) => candidate.id === cardId), forceOpen = false) => {
+    if (!forceOpen && selectedCardId === cardId) {
       setSelectedCardId(null)
       return
     }
-    const card = board.cards.find((candidate) => candidate.id === cardId)
     const isNarrow = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 1366px)').matches
-    setDrawerSide(isNarrow && card?.status === 'DECIDED' ? 'left' : 'right')
+    setDrawerSide(isNarrow && cardForSide?.status === 'DECIDED' ? 'left' : 'right')
     setSelectedCardId(cardId)
   }
 
