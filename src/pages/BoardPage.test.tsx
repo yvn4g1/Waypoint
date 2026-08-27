@@ -222,6 +222,33 @@ describe('BoardPage', () => {
     expect(screen.getByRole('complementary', { name: '論点の詳細' })).toHaveAttribute('data-side', 'right')
   })
 
+  it('Drawerの表示位置を繰り返し切り替え、閉じて開き直すと自動判定へ戻る', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => ({ matches: true, media: '(max-width: 1366px)', addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+    })
+    repository.save(board({ cards: [{ id: 'decided', title: '決定Card', memo: 'メモ', decision: '決定', status: 'DECIDED', order: 0 }] }))
+    renderBoard()
+
+    fireEvent.click(screen.getByRole('button', { name: '決定Card決定' }))
+    const drawer = screen.getByRole('complementary', { name: '論点の詳細' })
+    expect(drawer).toHaveAttribute('data-side', 'left')
+    fireEvent.click(screen.getByRole('button', { name: '詳細の表示位置を左右で切り替える' }))
+    expect(drawer).toHaveAttribute('data-side', 'right')
+    expect(screen.getByLabelText('タイトル')).toHaveValue('決定Card')
+    expect(screen.getByLabelText('自由メモ')).toHaveValue('メモ')
+    expect(screen.getByLabelText('決定内容')).toHaveValue('決定')
+    expect(screen.getByLabelText('状態')).toHaveValue('DECIDED')
+    fireEvent.change(screen.getByLabelText('状態'), { target: { value: 'DISCUSSING' } })
+    expect(drawer).toHaveAttribute('data-side', 'right')
+    fireEvent.click(screen.getByRole('button', { name: '詳細の表示位置を左右で切り替える' }))
+    expect(drawer).toHaveAttribute('data-side', 'left')
+
+    fireEvent.click(screen.getByRole('button', { name: '詳細を閉じる' }))
+    fireEvent.click(screen.getByRole('button', { name: '決定Cardメモ' }))
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toHaveAttribute('data-side', 'right')
+  })
+
   it('広幅では決定Cardも右Drawerで開く', () => {
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,

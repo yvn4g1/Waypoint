@@ -28,9 +28,10 @@ class ResizeObserverMock {
 
 function DrawerHarness({ card = firstCard }: { card?: Card }) {
   const [currentCard, setCurrentCard] = useState(card)
+  const [side, setSide] = useState<'left' | 'right'>('right')
   return <>
     <button type="button" onClick={() => setCurrentCard(secondCard)}>別Cardへ切替</button>
-    <CardDetailDrawer card={currentCard} side="right" onClose={vi.fn()} onChange={(field, value) => setCurrentCard((current) => ({ ...current, [field]: value }))} onStatusChange={vi.fn()} onDelete={vi.fn()} />
+    <CardDetailDrawer card={currentCard} side={side} onToggleSide={() => setSide((current) => current === 'left' ? 'right' : 'left')} onClose={vi.fn()} onChange={(field, value) => setCurrentCard((current) => ({ ...current, [field]: value }))} onStatusChange={vi.fn()} onDelete={vi.fn()} />
   </>
 }
 
@@ -67,5 +68,23 @@ describe('CardDetailDrawer textarea sizing', () => {
     rendered.unmount()
     render(<DrawerHarness />)
     expect(screen.getByLabelText('自由メモ')).toHaveStyle({ height: `${MIN_TEXTAREA_HEIGHT}px` })
+  })
+
+  it('keeps the Drawer instance and textarea height when its side changes', () => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+    render(<DrawerHarness />)
+    const drawer = screen.getByRole('complementary', { name: '論点の詳細' })
+    const memo = screen.getByLabelText('自由メモ') as HTMLTextAreaElement
+    Object.defineProperty(memo, 'offsetHeight', { configurable: true, get: () => 180 })
+    memo.style.height = '180px'
+    act(() => ResizeObserverMock.trigger(memo))
+    fireEvent.change(memo, { target: { value: '編集途中のメモ' } })
+
+    fireEvent.click(screen.getByRole('button', { name: '詳細の表示位置を左右で切り替える' }))
+
+    expect(screen.getByRole('complementary', { name: '論点の詳細' })).toBe(drawer)
+    expect(drawer).toHaveAttribute('data-side', 'left')
+    expect(screen.getByLabelText('自由メモ')).toHaveValue('編集途中のメモ')
+    expect(screen.getByLabelText('自由メモ')).toHaveStyle({ height: '180px' })
   })
 })

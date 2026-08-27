@@ -57,6 +57,7 @@
 .drawerLeft { right: auto; left: 0; border-right: 1px solid #d0d5dd; border-left: 0; box-shadow: 4px 0 16px rgb(16 24 40 / 16%); }
 .drawerHeader { display: flex; align-items: center; justify-content: space-between; }
 .drawerHeader h2 { margin: 0; }
+.drawerHeaderActions { display: flex; gap: 0.4rem; }
 .drawer input, .drawer textarea, .drawer select { box-sizing: border-box; width: 100%; min-width: 0; padding: 0.55rem; font: inherit; border: 1px solid #98a2b3; border-radius: 0.35rem; }
 .drawer textarea { min-height: 2.75rem; resize: vertical; overflow-y: auto; }
 .deleteButton { align-self: end; padding: 0.6rem; color: #b42318; background: #fff; border: 1px solid #b42318; border-radius: 0.35rem; }

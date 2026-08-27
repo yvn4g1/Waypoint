@@ -14,9 +14,10 @@ type CardDetailDrawerProps = {
   onStatusChange: (status: CardStatus) => void
   onDelete: () => void
   side: 'left' | 'right'
+  onToggleSide: () => void
 }
 
-export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDelete, side }: CardDetailDrawerProps) {
+export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDelete, side, onToggleSide }: CardDetailDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null)
   const memoRef = useRef<HTMLTextAreaElement>(null)
   const decisionRef = useRef<HTMLTextAreaElement>(null)
@@ -93,7 +94,10 @@ export function CardDetailDrawer({ card, onClose, onChange, onStatusChange, onDe
     <aside ref={drawerRef} className={`${styles.drawer} ${side === 'left' ? styles.drawerLeft : ''}`} data-side={side} aria-label="論点の詳細">
       <div className={styles.drawerHeader}>
         <h2>論点の詳細</h2>
-        <button type="button" aria-label="詳細を閉じる" onClick={onClose}>閉じる</button>
+        <div className={styles.drawerHeaderActions}>
+          <button type="button" aria-label="詳細の表示位置を左右で切り替える" onClick={onToggleSide}>⇆</button>
+          <button type="button" aria-label="詳細を閉じる" onClick={onClose}>閉じる</button>
+        </div>
       </div>
       <label htmlFor="card-title">タイトル</label>
       <input id="card-title" value={card.title} onChange={(event) => onChange('title', event.target.value)} />

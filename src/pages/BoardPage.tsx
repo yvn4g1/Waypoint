@@ -104,6 +104,10 @@ export function BoardPage() {
     setSelectedCardId(cardId)
   }
 
+  const toggleDrawerSide = () => {
+    setDrawerSide((current) => current === 'left' ? 'right' : 'left')
+  }
+
   const clearCurrentCard = () => {
     if (board.currentCardId === undefined || board.currentCardId === null) return
     saveBoard({ ...board, currentCardId: null, updatedAt: new Date().toISOString() })
@@ -182,7 +186,7 @@ export function BoardPage() {
           </form>}
         </>}
       />
-      {selectedCard && <CardDetailDrawer card={selectedCard} side={drawerSide} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
+      {selectedCard && <CardDetailDrawer card={selectedCard} side={drawerSide} onToggleSide={toggleDrawerSide} onClose={() => setSelectedCardId(null)} onChange={updateCard} onStatusChange={changeCardStatus} onDelete={deleteCard} />}
     </main>
   )
 }
