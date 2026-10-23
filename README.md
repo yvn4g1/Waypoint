@@ -34,6 +34,25 @@ Waypoint は、話し合いの「現在地」を可視化するためのシン�
 
 共同編集やAIによる議論整理などの追加機能は、実際に使ったうえで必要性を判断します。
 
+## Web版（GitHub Pages）
+
+GitHub Pagesで公開されたWaypointは、cloneやNode.jsの準備をせずURLから利用できます。
+初回公開時には、リポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定してください。
+`main` へのpushでワークフロー（`.github/workflows/deploy-pages.yml`）がテスト、ビルド、公開を実行します。
+
+公開予定URL: `https://yvn4g1.github.io/Waypoint/`（初回デプロイ成功後に利用可能）
+
+GitHub Pages上でもボードは**利用中のブラウザのLocalStorage**に保存され、GitHubへ自動アップロードされません。
+同じPC・同じブラウザで再訪すれば続きから利用できますが、ブラウザのサイトデータを消すと失われる可能性があります。
+また、`localhost`、GitHub Pages、別PCの保存領域はそれぞれ独立しています。
+
+既存ボードをWeb版へ移すときは、これまで使っていたWaypointの各ボードで「JSONエクスポート」を実行し、
+Web版のボード一覧から「インポート」してください。現時点では1ボードずつの移行になります。
+業務上の機密情報を保存する場合は、勤務先の外部サイト利用規程に従ってください。
+
+開発時は従来どおり`npm run dev`で起動し、公開版のみ`/#/boards/...`のURL形式を使います。
+本番ビルドをローカルで確認する場合は、`npm run build`の後に`npx vite preview`を実行して`/Waypoint/`を開いてください。
+
 ## 必要環境
 
 - Node.js
