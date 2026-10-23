@@ -4,6 +4,8 @@ import { CARD_STATUSES, CARD_STATUS_LABELS, countCardsByStatus, type Board, type
 import { cardsForStatus, moveCard } from '../domain/CardOrdering'
 import { LocalStorageBoardRepository } from '../storage/LocalStorageBoardRepository'
 import { downloadBoardExport } from './boardExportDownload'
+import { serializeBoardMarkdown } from '../domain/BoardReport'
+import { downloadBoardHtml, downloadBoardMarkdown, openBoardPrintDialog } from './boardReportDownload'
 import { BoardDnd, type BoardDragSource } from './BoardDnd'
 import { CardDetailDrawer } from './CardDetailDrawer'
 import styles from './Pages.module.css'
@@ -21,6 +23,7 @@ export function BoardPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [cardTitle, setCardTitle] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [reportNotice, setReportNotice] = useState<string | null>(null)
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameTitle, setRenameTitle] = useState('')
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -61,6 +64,25 @@ export function BoardPage() {
     const updatedBoard = { ...board, title, updatedAt: new Date().toISOString() }
     saveBoard(updatedBoard)
     setIsRenaming(false)
+  }
+
+  const copyReportMarkdown = async () => {
+    setIsMenuOpen(false)
+    try {
+      await navigator.clipboard.writeText(serializeBoardMarkdown(board, new Date().toISOString()))
+      setReportNotice('Markdownをコピーしました。')
+    } catch {
+      setReportNotice('コピーできませんでした。Markdownファイルの保存を利用してください。')
+    }
+  }
+
+  const printReport = () => {
+    setIsMenuOpen(false)
+    try {
+      if (!openBoardPrintDialog(board)) setReportNotice('印刷画面を開けませんでした。ポップアップの許可を確認するか、HTMLレポートから印刷してください。')
+    } catch {
+      setReportNotice('印刷画面を開けませんでした。HTMLレポートを保存して印刷してください。')
+    }
   }
 
   const deleteBoard = () => {
@@ -158,14 +180,19 @@ export function BoardPage() {
             </dl>
             <button type="button" className={styles.primaryButton} onClick={() => setIsAdding(true)}>＋論点</button>
             <div className={styles.headerActions}>
-              <button type="button" aria-label="ボード管理メニュー" aria-expanded={isMenuOpen} onClick={() => setIsMenuOpen(!isMenuOpen)}>管理</button>
-              {isMenuOpen && <div className={styles.menu}>
+              <button type="button" aria-label="ボード管理メニュー" aria-expanded={isMenuOpen} onClick={() => { setReportNotice(null); setIsMenuOpen(!isMenuOpen) }}>管理</button>
+              {isMenuOpen && <div className={`${styles.menu} ${styles.reportMenu}`}>
                 <button type="button" onClick={() => { setRenameTitle(board.title); setIsRenaming(true); setIsMenuOpen(false) }}>名前変更</button>
                 <button type="button" onClick={() => { downloadBoardExport(board); setIsMenuOpen(false) }}>JSONエクスポート</button>
+                <button type="button" onClick={() => { void copyReportMarkdown() }}>Markdownをコピー</button>
+                <button type="button" onClick={() => { downloadBoardMarkdown(board); setIsMenuOpen(false) }}>Markdownを保存</button>
+                <button type="button" onClick={() => { downloadBoardHtml(board); setIsMenuOpen(false) }}>HTMLレポートを保存</button>
+                <button type="button" onClick={printReport}>印刷／PDFとして保存</button>
                 <button type="button" onClick={deleteBoard}>削除</button>
               </div>}
             </div>
           </header>
+          {reportNotice && <p className={styles.reportNotice} role="status">{reportNotice}</p>}
 
           {isAdding && <form className={styles.form} onSubmit={addCard}>
             <label htmlFor="new-card-title">論点のタイトル</label>

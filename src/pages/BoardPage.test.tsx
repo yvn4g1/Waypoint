@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App'
@@ -129,6 +129,60 @@ describe('BoardPage', () => {
     expect(click).toHaveBeenCalledOnce()
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:waypoint')
     expect(screen.getByRole('heading', { name: 'プロジェクト会議' })).toBeInTheDocument()
+  })
+
+
+  it('管理メニューからMarkdownとHTMLを保存し、JSONエクスポートも引き続き使える', () => {
+    repository.save(board({ title: '検討/共有', cards: [{ id: 'a', title: '未決', memo: '', decision: '', status: 'DISCUSSING', order: 0 }] }))
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:waypoint')
+    const revokeObjectURL = vi.fn()
+    Object.defineProperties(URL, {
+      createObjectURL: { value: createObjectURL, configurable: true },
+      revokeObjectURL: { value: revokeObjectURL, configurable: true },
+    })
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    renderBoard()
+    for (const name of ['Markdownを保存', 'HTMLレポートを保存', 'JSONエクスポート']) {
+      fireEvent.click(screen.getByRole('button', { name: 'ボード管理メニュー' }))
+      fireEvent.click(screen.getByRole('button', { name }))
+    }
+    expect(click).toHaveBeenCalledTimes(3)
+    expect(createObjectURL.mock.calls.map((call) => call[0].type)).toEqual([
+      'text/markdown;charset=utf-8', 'text/html;charset=utf-8', 'application/json;charset=utf-8',
+    ])
+    expect(revokeObjectURL).toHaveBeenCalledTimes(3)
+    expect(repository.findById('board-1')?.cards[0].title).toBe('未決')
+  })
+
+  it('Markdownをクリップボードへコピーして通知する', async () => {
+    repository.save(board({ cards: [{ id: 'a', title: '残りの論点', memo: '', decision: '', status: 'ON_HOLD', order: 0 }] }))
+    const writeText = vi.fn(async (_text: string) => undefined)
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+    renderBoard()
+    fireEvent.click(screen.getByRole('button', { name: 'ボード管理メニュー' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Markdownをコピー' }))
+    })
+    expect(writeText).toHaveBeenCalledOnce()
+    expect(writeText.mock.calls[0][0]).toContain('## 保留（1件）')
+    expect(screen.getByRole('status')).toHaveTextContent('Markdownをコピーしました')
+  })
+
+  it('PDF保存は印刷用HTMLを開き、ポップアップ不可なら代替方法を知らせる', () => {
+    repository.save(board())
+    const target = { opener: {}, document: { write: vi.fn(), close: vi.fn() }, focus: vi.fn(), print: vi.fn() }
+    const open = vi.spyOn(window, 'open').mockReturnValue(target as unknown as Window)
+    renderBoard()
+    fireEvent.click(screen.getByRole('button', { name: 'ボード管理メニュー' }))
+    fireEvent.click(screen.getByRole('button', { name: '印刷／PDFとして保存' }))
+    expect(open).toHaveBeenCalledWith('', '_blank')
+    expect(target.document.write.mock.calls[0][0]).toContain('@page{size:A4')
+    expect(target.print).toHaveBeenCalledOnce()
+    expect(target.opener).toBeNull()
+    open.mockReturnValue(null)
+    fireEvent.click(screen.getByRole('button', { name: 'ボード管理メニュー' }))
+    fireEvent.click(screen.getByRole('button', { name: '印刷／PDFとして保存' }))
+    expect(screen.getByRole('status')).toHaveTextContent('HTMLレポートから印刷してください')
   })
 
   it('削除をキャンセルすると残し、確認すると一覧へ遷移して削除する', () => {

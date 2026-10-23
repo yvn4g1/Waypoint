@@ -64,3 +64,6 @@
 .dragging { opacity: 0.35; }
 .boardColumn.columnOver { background: #eff4ff; border-color: #84adff; }
 .dragOverlay { width: 220px; box-shadow: 0 8px 16px rgb(16 24 40 / 18%); }
+
+.reportMenu { min-width: 15rem; }
+.reportNotice { color: #475467; font-size: 0.875rem; padding: 0.5rem 0.75rem; background: #f8fafc; border-radius: 0.4rem; }
