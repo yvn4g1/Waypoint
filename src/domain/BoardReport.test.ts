@@ -30,7 +30,8 @@ describe('BoardReport', () => {
   it('Markdownは未決から表示し決定も残す。過去の決定欄を誤って確定扱いしない', () => {
     const md = serializeBoardMarkdown(board, at)
     expect(md.indexOf('## 検討中')).toBeLessThan(md.indexOf('## 決定'))
-    expect(md.indexOf('先の論点')).toBeLessThan(md.indexOf('後の論点'))
+    const discussing = md.split('## 検討中（2件）')[1].split('## 保留')[0]
+    expect(discussing.indexOf('先の論点')).toBeLessThan(discussing.indexOf('後の論点'))
     expect(md).toContain('**決定欄の記載（未確定）**')
     expect(md).toContain('> 1行目\n> 2行目')
     expect(md).toContain('## 未整理（0件）\n\n該当なし')
