@@ -165,7 +165,7 @@ describe('BoardPage', () => {
     })
     expect(writeText).toHaveBeenCalledOnce()
     expect(writeText.mock.calls[0][0]).toContain('## 保留（1件）')
-    expect(screen.getByRole('status')).toHaveTextContent('Markdownをコピーしました')
+    expect(screen.getByText('Markdownをコピーしました。')).toBeInTheDocument()
   })
 
   it('PDF保存は印刷用HTMLを開き、ポップアップ不可なら代替方法を知らせる', () => {
@@ -182,7 +182,7 @@ describe('BoardPage', () => {
     open.mockReturnValue(null)
     fireEvent.click(screen.getByRole('button', { name: 'ボード管理メニュー' }))
     fireEvent.click(screen.getByRole('button', { name: '印刷／PDFとして保存' }))
-    expect(screen.getByRole('status')).toHaveTextContent('HTMLレポートから印刷してください')
+    expect(screen.getByText(/印刷画面を開けませんでした。ポップアップの許可/)).toHaveTextContent('HTMLレポートから印刷してください')
   })
 
   it('削除をキャンセルすると残し、確認すると一覧へ遷移して削除する', () => {
